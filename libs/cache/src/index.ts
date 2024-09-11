@@ -153,35 +153,3 @@ export async function invalidateCache(key: string): Promise<void> {
     client.release();
   }
 }
-
-// Exemplo de uso
-(async () => {
-  try {
-    await setCache("1", "hello world", ["hello", "world"]);
-    await setCache("2", "goodbye world", ["goodbye", "world"]);
-    await setCache("3", "welcome world", ["welcome", "world"]);
-
-    console.log("1", await getCache("1"));
-    console.log("2", await getCache("2"));
-    console.log("3", await getCache("3"));
-
-    await invalidateTags("hello");
-    console.log("Invalidating tag 'hello'");
-
-    console.log("1", await getCache("1"));
-    console.log("2", await getCache("2"));
-    console.log("3", await getCache("3"));
-
-    await invalidateTags("world");
-
-    console.log("Invalidating tag 'world'");
-
-    console.log("1", await getCache("1"));
-    console.log("2", await getCache("2"));
-    console.log("3", await getCache("3"));
-  } catch (err) {
-    console.error(err);
-  } finally {
-    await pool.end();
-  }
-})();

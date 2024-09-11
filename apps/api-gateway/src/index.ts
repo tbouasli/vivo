@@ -1,7 +1,7 @@
 import Express from "express";
 import { getCache, invalidateTags, setCache } from "@vivo/cache";
 
-const EXTERNAL_API_URL = "http://localhost:3000";
+const EXTERNAL_API_URL = "http://localhost:8080";
 
 const app = Express();
 
@@ -9,8 +9,8 @@ app.get("/health", (_, res) => {
   res.send("OK");
 });
 
-app.post("/products", async (req, res) => {
-  const response = await fetch(`${EXTERNAL_API_URL}/products`, {
+app.post("/sign-up", async (req, res) => {
+  const response = await fetch(`${EXTERNAL_API_URL}/sign-up`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,16 +20,29 @@ app.post("/products", async (req, res) => {
 
   const data = await response.json();
   res.send(data);
-  invalidateTags("products");
 });
 
-app.patch("/products/:id", async (req, res) => {
+app.post("/sign-in", async (req, res) => {
+  const response = await fetch(`${EXTERNAL_API_URL}/sign-in`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(req.body),
+  });
+
+  const data = await response.json();
+  res.send(data);
+});
+
+app.post("/my-products/:id", async (req, res) => {
   const response = await fetch(
-    `${EXTERNAL_API_URL}/products/${req.params.id}`,
+    `${EXTERNAL_API_URL}/my-products/${req.params.id}`,
     {
-      method: "PATCH",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: req.headers.authorization!,
       },
       body: JSON.stringify(req.body),
     }
@@ -37,35 +50,53 @@ app.patch("/products/:id", async (req, res) => {
 
   const data = await response.json();
   res.send(data);
-  invalidateTags("products");
+  invalidateTags(req.headers.authorization!);
 });
 
-app.get("/products", async (_, res) => {
-  const cache = await getCache("products");
+app.delete("/my-products/:id", async (req, res) => {
+  const response = await fetch(
+    `${EXTERNAL_API_URL}/my-products/${req.params.id}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: req.headers.authorization!,
+      },
+    }
+  );
 
-  if (cache) {
-    res.send(cache);
+  const data = await response.json();
+  res.send(data);
+  invalidateTags(req.headers.authorization!);
+});
+
+app.get("/my-products", async (req, res) => {
+  const cachedProducts = await getCache(req.headers.authorization!);
+
+  if (cachedProducts) {
+    console.log("Cache hit");
+    res.send(cachedProducts);
     return;
+  } else {
+    console.log("Cache miss");
   }
 
-  const response = await fetch(`${EXTERNAL_API_URL}/products`);
+  const response = await fetch(`${EXTERNAL_API_URL}/my-products`, {
+    headers: {
+      Authorization: req.headers.authorization!,
+    },
+  });
+
+  console.log(response.body);
   const data = await response.json();
 
-  await setCache("products", data, ["products"]);
+  setCache(req.headers.authorization!, data, [
+    "my-products",
+    req.headers.authorization!,
+  ]);
   res.send(data);
 });
 
-app.get("/products/:id", async (req, res) => {
-  const cache = await getCache(`products:${req.params.id}`);
-
-  if (cache) {
-    res.send(cache);
-    return;
-  }
-
-  const response = await fetch(`${EXTERNAL_API_URL}/products/${req.params.id}`);
-  const data = await response.json();
-
-  await setCache(`products:${req.params.id}`, data, ["products"]);
-  res.send(data);
+app.listen(8000, () => {
+  console.log("Server running on port 8000");
 });
