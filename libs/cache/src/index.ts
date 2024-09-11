@@ -121,6 +121,39 @@ export async function invalidateTags(tagName: string): Promise<void> {
   }
 }
 
+export async function invalidateCache(key: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const deleteCacheEntriesQuery = `
+      DELETE FROM cache_entries WHERE key = $1;
+    `;
+    await client.query(deleteCacheEntriesQuery, [key]);
+
+    const selectTagIdQuery = `SELECT id FROM tags WHERE name = $1;`;
+    const res = await client.query(selectTagIdQuery, [key]);
+    const tagId = res.rows.length > 0 ? res.rows[0].id : null;
+
+    if (tagId) {
+      const deleteCacheTagsQuery = `
+        DELETE FROM cache_tags WHERE tag_id = $1;
+      `;
+      await client.query(deleteCacheTagsQuery, [tagId]);
+
+      const deleteTagQuery = `DELETE FROM tags WHERE id = $1;`;
+      await client.query(deleteTagQuery, [tagId]);
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // Exemplo de uso
 (async () => {
   try {
