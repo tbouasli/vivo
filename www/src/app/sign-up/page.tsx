@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LockIcon, MailIcon } from "lucide-react";
 import {
   Form,
@@ -15,6 +16,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   email: z.string().email(),
@@ -26,9 +28,10 @@ export default function Component() {
     resolver: zodResolver(schema),
   });
 
+  const router = useRouter();
+
   const onSubmit = form.handleSubmit(async (data) => {
-    console.log(data);
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sign-in`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sign-up`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -48,6 +51,8 @@ export default function Component() {
     const { token } = await response.json();
 
     localStorage.setItem("token", token);
+
+    router.push("/app");
   });
 
   return (
@@ -57,7 +62,7 @@ export default function Component() {
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <LockIcon className="mx-auto h-12 w-auto text-primary" />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Entrar na sua conta
+              Criar uma nova conta
             </h2>
           </div>
           <Form {...form}>
@@ -126,7 +131,7 @@ export default function Component() {
               />
               <div>
                 <Button type="submit" className="w-full">
-                  Entrar
+                  Criar
                 </Button>
               </div>
             </form>
@@ -144,10 +149,10 @@ export default function Component() {
 
             <div className="mt-6 text-center">
               <Link
-                href="/sign-up"
+                href="/sign-in"
                 className="font-medium text-primary hover:text-primary-dark"
               >
-                Criar uma nova conta
+                Entrar com uma conta existente
               </Link>
             </div>
           </div>

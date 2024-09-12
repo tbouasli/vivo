@@ -1,4 +1,5 @@
 import Express from "express";
+import cors from "cors";
 import { getCache, setCache } from "@vivo/cache";
 
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -9,6 +10,7 @@ const sqs = new SQSClient({
 
 const app = Express();
 
+app.use(cors());
 app.use(Express.json());
 
 app.get("/health", (_, res) => {
