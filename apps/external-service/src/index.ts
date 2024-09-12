@@ -6,11 +6,7 @@ import jwt from "jsonwebtoken";
 import { hash, compare } from "bcrypt";
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "external",
-  password: "postgres",
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
 });
 
 const app = Express();
@@ -27,7 +23,6 @@ const signUpSchema = z.object({
 });
 
 app.post("/sign-up", async (req, res) => {
-  console.log("sign-up");
   const { email, password } = signUpSchema.parse(req.body);
 
   const hashedPassword = await hash(password, 10);

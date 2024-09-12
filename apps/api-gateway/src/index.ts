@@ -1,16 +1,22 @@
 import Express from "express";
-import { getCache, invalidateTags, setCache } from "@vivo/cache";
+import { getCache, setCache } from "@vivo/cache";
 
-const EXTERNAL_API_URL = "http://localhost:8080";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+
+const sqs = new SQSClient({
+  endpoint: process.env.AWS_ENDPOINT,
+});
 
 const app = Express();
+
+app.use(Express.json());
 
 app.get("/health", (_, res) => {
   res.send("OK");
 });
 
 app.post("/sign-up", async (req, res) => {
-  const response = await fetch(`${EXTERNAL_API_URL}/sign-up`, {
+  const response = await fetch(`${process.env.EXTERNAL_API_URL}/sign-up`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -23,7 +29,7 @@ app.post("/sign-up", async (req, res) => {
 });
 
 app.post("/sign-in", async (req, res) => {
-  const response = await fetch(`${EXTERNAL_API_URL}/sign-in`, {
+  const response = await fetch(`${process.env.EXTERNAL_API_URL}/sign-in`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -37,7 +43,7 @@ app.post("/sign-in", async (req, res) => {
 
 app.post("/my-products/:id", async (req, res) => {
   const response = await fetch(
-    `${EXTERNAL_API_URL}/my-products/${req.params.id}`,
+    `${process.env.EXTERNAL_API_URL}/my-products/${req.params.id}`,
     {
       method: "POST",
       headers: {
@@ -49,13 +55,19 @@ app.post("/my-products/:id", async (req, res) => {
   );
 
   const data = await response.json();
-  res.send(data);
-  invalidateTags(req.headers.authorization!);
+  await sqs.send(
+    new SendMessageCommand({
+      QueueUrl: process.env.QUEUE_URL,
+      MessageBody: JSON.stringify({ tag: req.headers.authorization! }),
+    })
+  );
+
+  return res.send(data);
 });
 
 app.delete("/my-products/:id", async (req, res) => {
   const response = await fetch(
-    `${EXTERNAL_API_URL}/my-products/${req.params.id}`,
+    `${process.env.EXTERNAL_API_URL}/my-products/${req.params.id}`,
     {
       method: "DELETE",
       headers: {
@@ -67,7 +79,12 @@ app.delete("/my-products/:id", async (req, res) => {
 
   const data = await response.json();
   res.send(data);
-  invalidateTags(req.headers.authorization!);
+  await sqs.send(
+    new SendMessageCommand({
+      QueueUrl: process.env.QUEUE_URL,
+      MessageBody: JSON.stringify({ tag: req.headers.authorization! }),
+    })
+  );
 });
 
 app.get("/my-products", async (req, res) => {
@@ -81,13 +98,12 @@ app.get("/my-products", async (req, res) => {
     console.log("Cache miss");
   }
 
-  const response = await fetch(`${EXTERNAL_API_URL}/my-products`, {
+  const response = await fetch(`${process.env.EXTERNAL_API_URL}/my-products`, {
     headers: {
       Authorization: req.headers.authorization!,
     },
   });
 
-  console.log(response.body);
   const data = await response.json();
 
   setCache(req.headers.authorization!, data, [

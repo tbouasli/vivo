@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"
@@ -11,12 +14,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@vivo/cache": "workspace:*",
     "@types/express": "^4.17.21",
     "@types/pg": "^8.11.8",
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@vivo/cache": "workspace:*",
+    "@aws-sdk/client-sqs": "^3.650.0",
     "express": "^4.19.2",
     "pg": "^8.12.0"
   }

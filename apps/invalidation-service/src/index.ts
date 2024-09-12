@@ -1,18 +1,16 @@
-import { Kafka } from "kafkajs";
 import { Pool } from "pg";
+import {
+  SQSClient,
+  ReceiveMessageCommand,
+  DeleteMessageCommand,
+} from "@aws-sdk/client-sqs";
 
-const kafka = new Kafka({
-  clientId: "cache-service",
-  brokers: ["localhost:9092"], // Adjust this to your Kafka broker addresses
+const sqs = new SQSClient({
+  endpoint: process.env.AWS_ENDPOINT,
 });
-const consumer = kafka.consumer({ groupId: "cache-service-group" });
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "cache",
-  password: "postgres",
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
 });
 
 const invalidateTagRecursively = async (tag: string) => {
@@ -58,19 +56,41 @@ const invalidateTagRecursively = async (tag: string) => {
 };
 
 const run = async () => {
-  await consumer.connect();
-  await consumer.subscribe({ topic: "cache-invalidations", fromBeginning: true });
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  await consumer.run({
-    eachMessage: async ({ message }) => {
-	  
-	  if (!message.value) return;
-     
-      const { tagName } = JSON.parse(message.value.toString());
-      console.log(`Invalidating tag: ${tagName}`);
-      await invalidateTagRecursively(tagName);
-    },
+  const command = new ReceiveMessageCommand({
+    QueueUrl: process.env.QUEUE_URL,
+    MaxNumberOfMessages: 10,
   });
+
+  while (true) {
+    const res = await sqs.send(command);
+    if (res.Messages) {
+      for (const message of res.Messages) {
+        if (!message.Body) {
+          continue;
+        }
+
+        let body = null;
+
+        try {
+          body = JSON.parse(message.Body);
+        } catch (err) {
+          console.error(err);
+          continue;
+        }
+
+        const tag = body.tag;
+        await invalidateTagRecursively(tag);
+
+        const deleteCommand = new DeleteMessageCommand({
+          QueueUrl: process.env.QUEUE_URL,
+          ReceiptHandle: message.ReceiptHandle,
+        });
+        await sqs.send(deleteCommand);
+      }
+    }
+  }
 };
 
 run().catch(console.error);
