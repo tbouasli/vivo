@@ -26,7 +26,20 @@ Para a solução proposta, a arquitetura do sistema foi dividida em 5 componente
 
 - **Invalidation Service**: Serviço que recebe as mensagens de invalidação e invalida os dados no cache asincronamente.
 
-![Arquitetura](https://github.com/user-attachments/assets/d1f2dced-d0de-4f47-83a1-7ebbf9675c0b)
+```mermaid
+flowchart TD
+    API[API Gateway]
+    DB[Database]
+    EX[External API]
+    K[Kafka]
+    IN[Invalidation Service]
+    API-->|GET|EX
+    API-->|POST|EX
+    API-->|Send Invalidation Message|K
+    K-->|Invalidation Request|IN
+    IN-->|Invalidate Cache|DB
+    DB-->|Cache Hit|API
+```
 
 ## Tecnologias
 
