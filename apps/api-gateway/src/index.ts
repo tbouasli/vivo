@@ -1,6 +1,7 @@
 import Express from "express";
 import cors from "cors";
 import { getCache, setCache } from "@vivo/cache";
+import "elastic-apm-node/start";
 
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 

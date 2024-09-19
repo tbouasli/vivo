@@ -23,6 +23,7 @@
     "@aws-sdk/client-sqs": "^3.650.0",
     "@vivo/cache": "workspace:*",
     "cors": "^2.8.5",
+    "elastic-apm-node": "^4.7.3",
     "express": "^4.19.2",
     "pg": "^8.12.0"
   }
