@@ -1,6 +1,9 @@
 FROM node:alpine AS base
 WORKDIR /app
 RUN corepack enable pnpm
+ENV NEW_RELIC_NO_CONFIG_FILE=true
+ENV NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
+ENV NEW_RELIC_LOG=stdout
 
 FROM base AS build
 COPY . .

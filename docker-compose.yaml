@@ -1,61 +1,4 @@
 services:
-  apm-server:
-      image: docker.elastic.co/apm/apm-server:7.17.24
-      depends_on:
-        elasticsearch:
-          condition: service_healthy
-        kibana:
-          condition: service_healthy
-      cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
-      cap_drop: ["ALL"]
-      ports:
-      - 8200:8200
-      command: >
-        apm-server -e
-          -E apm-server.rum.enabled=true
-          -E setup.kibana.host=kibana:5601
-          -E setup.template.settings.index.number_of_replicas=0
-          -E apm-server.kibana.enabled=true
-          -E apm-server.kibana.host=kibana:5601
-          -E output.elasticsearch.hosts=["elasticsearch:9200"]
-      healthcheck:
-        interval: 10s
-        retries: 12
-        test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
-  elasticsearch:
-      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.24
-      environment:
-      - bootstrap.memory_lock=true
-      - cluster.name=docker-cluster
-      - cluster.routing.allocation.disk.threshold_enabled=false
-      - discovery.type=single-node
-      - ES_JAVA_OPTS=-XX:UseAVX=2 -Xms1g -Xmx1g
-      ulimits:
-        memlock:
-          hard: -1
-          soft: -1
-      volumes:
-      - esdata:/usr/share/elasticsearch/data
-      ports:
-      - 9200:9200
-      healthcheck:
-        interval: 20s
-        retries: 10
-        test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
-  kibana:
-      image: docker.elastic.co/kibana/kibana:7.17.24
-      depends_on:
-        elasticsearch:
-          condition: service_healthy
-      environment:
-        ELASTICSEARCH_URL: http://elasticsearch:9200
-        ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-      ports:
-      - 5601:5601
-      healthcheck:
-        interval: 10s
-        retries: 20
-        test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:5601/api/status
   cache:
     image: postgres:latest
     container_name: cache
@@ -101,7 +44,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: invalidation-service
-
     environment:
       - AWS_ENDPOINT=http://localstack:4566
       - QUEUE_URL=http://localstack:4566/000000000000/invalidation-queue
@@ -109,6 +51,11 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - DATABASE_URL=postgresql://cache:cache@cache:5432/cache
+      - NEW_RELIC_APP_NAME=invalidation-service
+      - NEW_RELIC_LICENSE_KEY=e6ec3fc9a099aba378ec15a656c00323FFFFNRAL
+      - NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
+      - NEW_RELIC_LOG=stdout
+      - NEW_RELIC_NO_CONFIG_FILE=true
   external-service:
     depends_on:
       - external
@@ -117,12 +64,17 @@ services:
       context: .
       dockerfile: Dockerfile
       target: external-service
-    expose:
-      - 8080
+    ports:
+      - "80:80"
     environment:
       - DATABASE_URL=postgresql://external:external@external:5432/external
       - JWT_SECRET=secret
-      
+      - NEW_RELIC_APP_NAME=external-service
+      - NEW_RELIC_LICENSE_KEY=e6ec3fc9a099aba378ec15a656c00323FFFFNRAL
+      - NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
+      - NEW_RELIC_LOG=stdout
+      - NEW_RELIC_NO_CONFIG_FILE=true
+
   api-gateway:
     depends_on:
       - cache
@@ -143,11 +95,13 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - DATABASE_URL=postgresql://cache:cache@cache:5432/cache
-      - EXTERNAL_API_URL=http://external-service:8080
-      - ELASTIC_APM_SERVER_URL=http://apm-server:8200
-      - ELASTIC_APM_SECRET_TOKEN=secret
-      - ELASTIC_APM_SERVICE_NAME=api-gateway
-      - ELASTIC_APM_ENVIRONMENT=development
+      - EXTERNAL_API_URL=http://external-service:80
+      - NEW_RELIC_APP_NAME=api-gateway
+      - NEW_RELIC_LICENSE_KEY=e6ec3fc9a099aba378ec15a656c00323FFFFNRAL
+      - NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
+      - NEW_RELIC_LOG=stdout
+      - NEW_RELIC_NO_CONFIG_FILE=true
+      
 volumes:
   esdata:
     driver: local

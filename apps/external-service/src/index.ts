@@ -1,4 +1,6 @@
-import Express, { NextFunction, Request, Response } from "express";
+import "newrelic";
+
+import Express from "express";
 import { Pool } from "pg";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -177,6 +179,6 @@ app.delete("/my-products/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(8080, () => {
-  console.log("Server is running on port 8080");
+app.listen(80, () => {
+  console.log("Server is running on port 80");
 });

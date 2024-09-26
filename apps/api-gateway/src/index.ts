@@ -1,8 +1,8 @@
+import "newrelic";
+
 import Express from "express";
 import cors from "cors";
 import { getCache, setCache } from "@vivo/cache";
-import "elastic-apm-node/start";
-
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
 const sqs = new SQSClient({
@@ -116,6 +116,6 @@ app.get("/my-products", async (req, res) => {
   res.send(data);
 });
 
-app.listen(8000, () => {
-  console.log("Server running on port 8000");
+app.listen(80, () => {
+  console.log("Server running on port 80");
 });

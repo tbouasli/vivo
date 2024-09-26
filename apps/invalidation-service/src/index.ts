@@ -1,3 +1,5 @@
+import newrelic from "newrelic";
+
 import { Pool } from "pg";
 import {
   SQSClient,
