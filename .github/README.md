@@ -22,7 +22,7 @@ Para a solução proposta, a arquitetura do sistema foi dividida em 5 componente
 
 - **External API**: APIs externas que fornecem os dados que a API da Vivo consome.
 
-- **Kafka**: Fila de mensagens que é utilizada para enviar mensagens de invalidação para o serviço de invalidação.
+- **SQS**: Fila de mensagens que é utilizada para enviar mensagens de invalidação para o serviço de invalidação.
 
 - **Invalidation Service**: Serviço que recebe as mensagens de invalidação e invalida os dados no cache asincronamente.
 
@@ -31,7 +31,7 @@ flowchart TD
     API[API Gateway]
     DB[Database]
     EX[External API]
-    K[Kafka]
+    K[SQS]
     IN[Invalidation Service]
     API-->|GET|EX
     API-->|POST|EX
@@ -41,6 +41,10 @@ flowchart TD
     DB-->|Cache Hit|API
 ```
 
+### Arquitetura Cloud
+
+![alt text](image.png)
+
 ## Tecnologias
 
 - **API Gateway**: API feita em Node.js com Express.js.
@@ -49,6 +53,6 @@ flowchart TD
 
 - **External API**: API feita em Node.js com Express.js.
 
-- **Kafka**: Apache Kafka
+- **SQS**: Fila de mensagens da AWS.
 
 - **Invalidation Service**: API feita em Node.js com Express.js.
