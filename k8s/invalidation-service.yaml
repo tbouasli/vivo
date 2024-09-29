@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: invalidation-service
+  namespace: invalidation-service
+spec:
+  selector:
+    app: invalidation-service
+  ports:
+    - port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invalidation-service
+  namespace: invalidation-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invalidation-service
+  template:
+    metadata:
+      labels:
+        app: invalidation-service
+    spec:
+      containers:
+        - name: invalidation-service
+          image: 962215205296.dkr.ecr.sa-east-1.amazonaws.com/vivo-invalidation-service:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: QUEUE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: QUEUE_URL
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: AWS_REGION
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: DATABASE_URL
+            - name: ELASTIC_APM_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: ELASTIC_APM_SERVER_URL
+            - name: ELASTIC_APM_SECRET_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: ELASTIC_APM_SECRET_TOKEN
+            - name: ELASTIC_APM_SERVICE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: ELASTIC_APM_SERVICE_NAME
+            - name: ELASTIC_APM_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: invalidation-service
+                  key: ELASTIC_APM_ENVIRONMENT
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: invalidation-service
+  namespace: invalidation-service
+data:
+  QUEUE_URL: https://sqs.sa-east-1.amazonaws.com/962215205296/vivo-invalidation-queue
+  AWS_REGION: sa-east-1
+  ELASTIC_APM_SERVER_URL: http://apm-server-apm-server.monitoring.svc.cluster.local:8200
+  ELASTIC_APM_SERVICE_NAME: invalidation-service
+  ELASTIC_APM_ENVIRONMENT: production

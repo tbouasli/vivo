@@ -1,4 +1,4 @@
-import "newrelic";
+import "elastic-apm-node/start";
 
 import Express from "express";
 import { Pool } from "pg";
@@ -9,6 +9,9 @@ import { hash, compare } from "bcrypt";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 const app = Express();

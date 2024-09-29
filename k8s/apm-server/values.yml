@@ -1,0 +1,12 @@
+# File name values-Apm.yaml for APM server
+apmConfig:
+  apm-server.yml: |
+    apm-server:
+      host: "0.0.0.0:8200"
+
+    queue: {}
+    output.elasticsearch:
+      hosts: ["https://elasticsearch-master:9200"]
+      username: "elastic"
+      password: "UKeFVAKFl7jNge2A"
+      ssl.verification_mode: "none"

@@ -1,5 +1,6 @@
 services:
   cache:
+    network_mode: host
     image: postgres:latest
     container_name: cache
     expose:
@@ -11,6 +12,7 @@ services:
     volumes:
       - ./.db/cache.sql:/docker-entrypoint-initdb.d/init.sql
   external:
+    network_mode: host
     image: postgres:latest
     container_name: external
     expose:
@@ -34,6 +36,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./.localstack/init.sh:/etc/localstack/init/ready.d/init-aws.sh"
   invalidation-service:
+    network_mode: host
     depends_on:
       - cache
       - external
@@ -51,12 +54,8 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - DATABASE_URL=postgresql://cache:cache@cache:5432/cache
-      - NEW_RELIC_APP_NAME=invalidation-service
-      - NEW_RELIC_LICENSE_KEY=e6ec3fc9a099aba378ec15a656c00323FFFFNRAL
-      - NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
-      - NEW_RELIC_LOG=stdout
-      - NEW_RELIC_NO_CONFIG_FILE=true
   external-service:
+    network_mode: host
     depends_on:
       - external
     image: external-service
@@ -65,17 +64,16 @@ services:
       dockerfile: Dockerfile
       target: external-service
     ports:
-      - "80:80"
+      - "80:3333"
     environment:
       - DATABASE_URL=postgresql://external:external@external:5432/external
       - JWT_SECRET=secret
-      - NEW_RELIC_APP_NAME=external-service
-      - NEW_RELIC_LICENSE_KEY=e6ec3fc9a099aba378ec15a656c00323FFFFNRAL
-      - NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
-      - NEW_RELIC_LOG=stdout
-      - NEW_RELIC_NO_CONFIG_FILE=true
+      - ELASTIC_APM_SERVER_URL=http://localhost:9000
+      - ELASTIC_APM_SERVICE_NAME=external-service
+      - ELASTIC_APM_ENVIRONMENT=development
 
   api-gateway:
+    network_mode: host
     depends_on:
       - cache
       - external
@@ -96,11 +94,9 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
       - DATABASE_URL=postgresql://cache:cache@cache:5432/cache
       - EXTERNAL_API_URL=http://external-service:80
-      - NEW_RELIC_APP_NAME=api-gateway
-      - NEW_RELIC_LICENSE_KEY=e6ec3fc9a099aba378ec15a656c00323FFFFNRAL
-      - NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
-      - NEW_RELIC_LOG=stdout
-      - NEW_RELIC_NO_CONFIG_FILE=true
+      - ELASTIC_APM_SERVER_URL=http://localhost:9000
+      - ELASTIC_APM_SERVICE_NAME=api-gateway
+      - ELASTIC_APM_ENVIRONMENT=development
       
 volumes:
   esdata:

@@ -1,3 +1,5 @@
 node_modules/
 dist/
 volume
+k8s/secrets.yaml
+.env

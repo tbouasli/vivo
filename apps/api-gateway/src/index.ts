@@ -1,4 +1,4 @@
-import "newrelic";
+import apm from "elastic-apm-node/start";
 
 import Express from "express";
 import cors from "cors";
@@ -15,7 +15,7 @@ app.use(cors());
 app.use(Express.json());
 
 app.get("/health", (_, res) => {
-  res.send("OK");
+  return res.send("OK");
 });
 
 app.post("/sign-up", async (req, res) => {
@@ -28,7 +28,7 @@ app.post("/sign-up", async (req, res) => {
   });
 
   const data = await response.json();
-  res.send(data);
+  return res.send(data);
 });
 
 app.post("/sign-in", async (req, res) => {
@@ -41,7 +41,7 @@ app.post("/sign-in", async (req, res) => {
   });
 
   const data = await response.json();
-  res.send(data);
+  return res.send(data);
 });
 
 app.post("/my-products/:id", async (req, res) => {
@@ -62,6 +62,12 @@ app.post("/my-products/:id", async (req, res) => {
     new SendMessageCommand({
       QueueUrl: process.env.QUEUE_URL,
       MessageBody: JSON.stringify({ tag: req.headers.authorization! }),
+      MessageAttributes: {
+        traceparent: {
+          DataType: "String",
+          StringValue: apm.currentTraceparent!,
+        },
+      },
     })
   );
 
@@ -81,13 +87,20 @@ app.delete("/my-products/:id", async (req, res) => {
   );
 
   const data = await response.json();
-  res.send(data);
   await sqs.send(
     new SendMessageCommand({
       QueueUrl: process.env.QUEUE_URL,
       MessageBody: JSON.stringify({ tag: req.headers.authorization! }),
+      MessageAttributes: {
+        traceparent: {
+          DataType: "String",
+          StringValue: apm.currentTraceparent!,
+        },
+      },
     })
   );
+
+  return res.send(data);
 });
 
 app.get("/my-products", async (req, res) => {
@@ -95,8 +108,7 @@ app.get("/my-products", async (req, res) => {
 
   if (cachedProducts) {
     console.log("Cache hit");
-    res.send(cachedProducts);
-    return;
+    return res.send(cachedProducts);
   } else {
     console.log("Cache miss");
   }
@@ -113,7 +125,7 @@ app.get("/my-products", async (req, res) => {
     "my-products",
     req.headers.authorization!,
   ]);
-  res.send(data);
+  return res.send(data);
 });
 
 app.listen(80, () => {

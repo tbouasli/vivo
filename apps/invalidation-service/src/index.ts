@@ -1,4 +1,4 @@
-import newrelic from "newrelic";
+import apm from "elastic-apm-node/start";
 
 import { Pool } from "pg";
 import {
@@ -73,12 +73,20 @@ const run = async () => {
           continue;
         }
 
+        const traceparent = message.MessageAttributes?.traceparent?.StringValue;
+
+        const transaction = apm.startTransaction("invalidate-tag", "request", {
+          childOf: traceparent,
+        });
+
         let body = null;
 
         try {
           body = JSON.parse(message.Body);
         } catch (err) {
           console.error(err);
+          transaction?.setOutcome("failure");
+          transaction?.end();
           continue;
         }
 
@@ -90,6 +98,9 @@ const run = async () => {
           ReceiptHandle: message.ReceiptHandle,
         });
         await sqs.send(deleteCommand);
+
+        transaction?.setOutcome("success");
+        transaction?.end();
       }
     }
   }
