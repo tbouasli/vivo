@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
+import Image from "next/image";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -49,10 +50,7 @@ export default async function RootLayout({
                   className="text-red-500 mx-auto mb-4"
                 />
                 <CardTitle>Serviço fora do ar</CardTitle>
-                <CardDescription></CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500 text-center">
+                <CardDescription className="text-center">
                   Desligamos o serviço temporariamente para economizar recursos.
                   Caso você queira solicitar a reativação, entre em contato
                   abrindo um issue no nosso{" "}
@@ -62,7 +60,15 @@ export default async function RootLayout({
                   >
                     github
                   </Link>
-                </p>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Image
+                  src="/freezer.webp"
+                  width={400}
+                  height={400}
+                  alt="Desligaram o freezer de noite"
+                />
               </CardContent>
             </Card>
           </main>
