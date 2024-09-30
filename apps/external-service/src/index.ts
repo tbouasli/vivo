@@ -111,6 +111,8 @@ app.get("/my-products", async (req, res) => {
 
   const products = result.rows;
 
+  client.release();
+
   res.json({ products });
 });
 
@@ -146,6 +148,8 @@ app.post("/my-products/:id", async (req, res) => {
     [id, productId]
   );
 
+  client.release();
+
   res.json({ success: true });
 });
 
@@ -178,6 +182,8 @@ app.delete("/my-products/:id", async (req, res) => {
   `,
     [id, productId]
   );
+
+  client.release();
 
   res.json({ success: true });
 });

@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo } from "react";
+import { Product } from "@/components/product";
 
 const allProducts = [
   {
@@ -31,6 +32,7 @@ const allProducts = [
 ];
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const [value, setValue] = React.useState<string | null>(null);
 
   const products = useQuery({
@@ -64,25 +66,21 @@ export default function Dashboard() {
         }
       );
     },
-    onSuccess: () => {
-      setTimeout(() => {
-        products.refetch();
-      }, 1000);
-    },
-  });
+    onMutate: async (productId) => {
+      const previousProducts = queryClient.getQueryData<{
+        products: { id: number; name: string; description: string }[];
+      }>(["products"]);
 
-  const removeProduct = useMutation({
-    mutationKey: ["remove-products"],
-    mutationFn: async (productId: number) => {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/my-products/${productId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      queryClient.setQueryData(["products"], {
+        products: [
+          ...previousProducts!.products,
+          allProducts.find((p) => p.id === Number(productId))!,
+        ],
+      });
+
+      setValue(null);
+
+      return { previousProducts };
     },
     onSuccess: () => {
       setTimeout(() => {
@@ -129,28 +127,13 @@ export default function Dashboard() {
                     <LoaderCircle className="h-8 w-8 animate-spin mx-auto" />
                   ) : products.data!.products.length > 0 ? (
                     <ul className="space-y-4">
-                      {products.data!.products.map((product) => (
-                        <li
-                          key={product.id}
-                          className="flex justify-between items-center bg-gray-50 p-4 rounded-md"
-                        >
-                          <div>
-                            <h3 className="text-lg font-semibold">
-                              {product.name}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              {product.description}
-                            </p>
-                          </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeProduct.mutate(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remove
-                          </Button>
+                      {addProduct.isPending && (
+                        <li className="flex justify-center">
+                          <LoaderCircle className="h-8 w-8 animate-spin" />
                         </li>
+                      )}
+                      {products.data!.products.map((product) => (
+                        <Product key={product.id} product={product} />
                       ))}
                     </ul>
                   ) : (
