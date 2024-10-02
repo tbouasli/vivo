@@ -27,7 +27,6 @@ export default function Component() {
   });
 
   const onSubmit = form.handleSubmit(async (data) => {
-    console.log(data);
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sign-in`, {
       method: "POST",
       headers: {

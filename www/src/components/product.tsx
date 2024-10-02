@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, Trash2 } from "lucide-react";
 
 interface ProductProps {
@@ -14,6 +15,12 @@ interface ProductProps {
 
 export function Product({ product }: ProductProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const getProducts = useQuery({
+    queryKey: ["products"],
+    enabled: false,
+  });
 
   const removeProduct = useMutation({
     mutationKey: ["remove-products"],
@@ -48,6 +55,17 @@ export function Product({ product }: ProductProps) {
         });
       }, 1000);
     },
+    onError: () => {
+      toast({
+        title: "Erro ao remover produto",
+        description: "Tente novamente mais tarde",
+        variant: "destructive",
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["products"],
+      });
+    },
   });
 
   return (
@@ -60,6 +78,7 @@ export function Product({ product }: ProductProps) {
         <p className="text-sm text-gray-500">{product.description}</p>
       </div>
       <Button
+        disabled={getProducts.isLoading}
         variant="destructive"
         size="sm"
         onClick={() => removeProduct.mutate(product.id)}

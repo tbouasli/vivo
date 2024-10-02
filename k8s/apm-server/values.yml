@@ -8,5 +8,5 @@ apmConfig:
     output.elasticsearch:
       hosts: ["https://elasticsearch-master:9200"]
       username: "elastic"
-      password: "UKeFVAKFl7jNge2A"
+      password: "P8kkeg8NrqoiPHJj"
       ssl.verification_mode: "none"

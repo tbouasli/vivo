@@ -149,7 +149,7 @@ export default function Component() {
 
             <div className="mt-6 text-center">
               <Link
-                href="/sign-in"
+                href="/"
                 className="font-medium text-primary hover:text-primary-dark"
               >
                 Entrar com uma conta existente

@@ -2,20 +2,20 @@ apiVersion: v1
 kind: Service
 metadata:
   name: api-gateway
-  namespace: api-gateway
+  namespace: app
 spec:
   selector:
     app: api-gateway
   ports:
     - port: 80
       targetPort: 80
-  type: LoadBalancer
+  type: NodePort
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
-  namespace: api-gateway
+  namespace: app
 spec:
   replicas: 1
   selector:
@@ -88,17 +88,52 @@ spec:
               cpu: "250m"
             limits:
               memory: "128Mi"
-              cpu: "500m"
+              cpu: "250m"
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: api-gateway
-  namespace: api-gateway
+  namespace: app
 data:
   ELASTIC_APM_SERVER_URL: http://apm-server-apm-server.monitoring.svc.cluster.local:8200
   ELASTIC_APM_SERVICE_NAME: api-gateway
   ELASTIC_APM_ENVIRONMENT: production
   QUEUE_URL: https://sqs.sa-east-1.amazonaws.com/962215205296/vivo-invalidation-queue
   AWS_REGION: sa-east-1
-  EXTERNAL_API_URL: http://external-api.external-api.svc.cluster.local:80
+  EXTERNAL_API_URL: http://external-api.app.svc.cluster.local:80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-gateway-ingress
+  namespace: app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: nginx
+
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.vivo.bouasli.com
+      secretName: tls-secret
+  rules:
+    - host: api.vivo.bouasli.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 80

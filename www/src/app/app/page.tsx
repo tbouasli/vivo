@@ -16,10 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LoaderCircle, Plus, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo } from "react";
 import { Product } from "@/components/product";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const allProducts = [
   {
@@ -34,6 +36,17 @@ const allProducts = [
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const [value, setValue] = React.useState<string | null>(null);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/");
+      return;
+    }
+  }, []);
 
   const products = useQuery({
     queryKey: ["products"],
@@ -86,6 +99,15 @@ export default function Dashboard() {
       setTimeout(() => {
         products.refetch();
       }, 1000);
+    },
+    onError: () => {
+      toast({
+        title: "Erro ao adicionar produto",
+        description: "Tente novamente mais tarde",
+        variant: "destructive",
+      });
+
+      products.refetch();
     },
   });
 
