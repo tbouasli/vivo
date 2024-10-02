@@ -15,6 +15,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   email: z.string().email(),
@@ -25,6 +26,8 @@ export default function Component() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
   });
+
+  const router = useRouter();
 
   const onSubmit = form.handleSubmit(async (data) => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sign-in`, {
@@ -47,6 +50,8 @@ export default function Component() {
     const { token } = await response.json();
 
     localStorage.setItem("token", token);
+
+    router.push("/app");
   });
 
   return (
