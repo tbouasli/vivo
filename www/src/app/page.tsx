@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
   email: z.string().email(),
@@ -28,6 +29,7 @@ export default function Component() {
   });
 
   const router = useRouter();
+  const { toast } = useToast();
 
   const onSubmit = form.handleSubmit(async (data) => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sign-in`, {
@@ -48,6 +50,14 @@ export default function Component() {
     }
 
     const { token } = await response.json();
+
+    if (!token) {
+      toast({
+        title: "Credenciais inválidas",
+        variant: "destructive",
+      });
+      return;
+    }
 
     localStorage.setItem("token", token);
 
